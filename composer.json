@@ -1,0 +1,12 @@
+{
+    "name": "pekhov/test_translate",
+    "require": {
+        "dejurin/php-google-translate-for-free": "^1.0"
+    },
+    "authors": [
+        {
+            "name": "Pekhov14",
+            "email": "pehovanton21@mail.com"
+        }
+    ]
+}
