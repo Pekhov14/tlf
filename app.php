@@ -1,44 +1,131 @@
 <?php
 
+/*
+ * TODO:
+ * Добавить создание папки с именем второва параметра
+ * Добавить визуальный эфект в терменал
+ * Подчитать колличевство файлов
+ * При каждом переведенном отображать % сделанного и #...
+ * Рекурсивно обходить всю папку и переводить
+ */
+
 require_once ('vendor/autoload.php');
 
 use \Dejurin\GoogleTranslateForFree;
 
-$source   = 'ru';
-$target   = 'uk';
-$attempts = 5;
+class TranslateFolder {
+    private $source     = 'ru';
+    private $target     = 'uk';
+    private $attempts   = 5;
+    private $pattern    = "/\s'(.+?)'/";
+    private $outputFile = './files/category_out.php';
 
-$pattern    = "/\s'(.+?)'/";
-$outputFile = './files/category_out.php';
+    private $tr;
 
-$tr = new GoogleTranslateForFree();
+    public function __construct($params)
+    {
+        if(!isset($params[1]) || !isset($params[2])) {
+            trigger_error('My creator wants you to pass two arguments');
+            die();
+        }
 
-function getLines(string $path) {
-	$file = fopen($path, 'r');
+        $this->tr = new GoogleTranslateForFree();
 
-	if(!$file) {
-		throw new \Exception();
-	}
+        $this->run($params[1], $params[2]);
+    }
 
-	while ($line = fgets($file)) {
-		yield $line;
-	}
+    public function run($dirName, $newDir) {
+        echo $dirName . ' ' . $newDir .  PHP_EOL;
+        $start = microtime(true);
+        $this->translateFile();
+        echo PHP_EOL . 'Full Time: ' . round(microtime(true) - $start, 2).' s.' . PHP_EOL;
+    }
 
-	fclose($file);
-}
+    private function getLines(string $path) {
+        $file = fopen($path, 'r');
 
-foreach(getLines('./files/category.php') as $line) {
-	preg_match($pattern, $line, $matches);
+        if(!$file) {
+            throw new \Exception();
+        }
 
-	$resultLine = $line;
+        while ($line = fgets($file)) {
+            yield $line;
+        }
 
-	if($matches) {
-		$translate = ' ';
-		$translate .= $tr->translate($source, $target, $matches[0], $attempts);
-		$resultLine = preg_replace($pattern, $translate, $line);
-	}
+        fclose($file);
+    }
 
-	file_put_contents($outputFile, $resultLine, FILE_APPEND | LOCK_EX);
-}
+    private function generateDots() {
+        $hashs = '';
+        for ($j=0; $j<=100; $j++) {
+            $hashs .= '.';
+        }
+        return $hashs;
+    }
 
-echo 'Success' . PHP_EOL;
+
+//$i = 0;
+//
+//while ($i <= 100) {
+//    $output = [];
+//
+//    for ($k=0; $k <= $i; $k++) {
+//        $hashs[$k] = '#';
+//    }
+//    $output[] = 'Working ' . $i . '% ' . $hashs;
+//    $output[] = 'Time: ' . round(microtime(true) - $start, 2) . 's';
+//    replaceCommandOutput($output);
+//
+////    work
+//    usleep(100000);
+//
+//    $i++;
+//}
+
+    private function translateFile() {
+        $i = 0;
+        $hashs = $this->generateDots();
+        $output = [];
+
+        foreach($this->getLines('./files/category.php') as $line) {
+            preg_match($this->pattern, $line, $matches);
+
+            $resultLine = $line;
+
+            if($matches) {
+                $translate = ' ';
+                $translate .= $this->tr->translate($this->source, $this->target, $matches[0], $this->attempts);
+                $resultLine = preg_replace($this->pattern, $translate, $line);
+            }
+
+            file_put_contents($this->outputFile, $resultLine, FILE_APPEND | LOCK_EX);
+
+            for ($k=0; $k <= $i; $k++) {
+                $hashs[$k] = '#';
+            }
+
+            $output[] = 'Working ' . $i . '% ' . $hashs;
+//            $output[] = 'Time: ' . round(microtime(true) - $start, 2) . 's';
+            $this->replaceCommandOutput($output);
+            $i++;
+        }
+    }
+
+    public function replaceCommandOutput(array $output) {
+        static $oldLines = 0;
+        $numNewLines = count($output) - 1;
+
+        if ($oldLines == 0) {
+            $oldLines = $numNewLines;
+        }
+
+        echo implode(PHP_EOL, $output);
+        echo chr(27) . "[0G";
+        echo chr(27) . "[" . $oldLines . "A";
+
+        $numNewLines = $oldLines;
+    }
+};
+
+
+(new TranslateFolder($argv));
