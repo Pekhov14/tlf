@@ -35,10 +35,39 @@ class TranslateFolder {
     }
 
     public function run($dirName, $newDir) {
-        echo $dirName . ' ' . $newDir .  PHP_EOL;
+    	// create & scan directory
+
+		$di = new RecursiveDirectoryIterator(__DIR__ . '/files',RecursiveDirectoryIterator::SKIP_DOTS);
+		$it = new RecursiveIteratorIterator($di);
+
+		foreach($it as $file) {
+			if (pathinfo($file, PATHINFO_EXTENSION) === "php") {
+				echo $file, PHP_EOL;
+			}
+		}
+
+//        echo $dirName . ' ' . $newDir .  PHP_EOL;
         $start = microtime(true);
-        $this->translateFile();
-        echo PHP_EOL . 'Full Time: ' . round(microtime(true) - $start, 2).' s.' . PHP_EOL;
+
+		$i = 0;
+		$hashes = $this->generateDots();
+		while ($i <= 5) {
+
+			// Передать имя путь и имя файла
+//        $this->translateFile();
+
+
+			$output = [];
+			$output[] = 'Working: ' . $i  . '% ' . $hashes;
+			$output[] = 'Please wait while our monkeys finish translating';
+
+			$this->replaceCommandOutput($output);
+//			sleep(1);
+			usleep(100000);
+			$hashes[$i] = '#';
+			$i++;
+		}
+        echo PHP_EOL . PHP_EOL . 'Full Time: ' . round(microtime(true) - $start, 2).' s.' . PHP_EOL;
     }
 
     private function getLines(string $path) {
@@ -63,31 +92,9 @@ class TranslateFolder {
         return $hashs;
     }
 
-
-//$i = 0;
-//
-//while ($i <= 100) {
-//    $output = [];
-//
-//    for ($k=0; $k <= $i; $k++) {
-//        $hashs[$k] = '#';
-//    }
-//    $output[] = 'Working ' . $i . '% ' . $hashs;
-//    $output[] = 'Time: ' . round(microtime(true) - $start, 2) . 's';
-//    replaceCommandOutput($output);
-//
-////    work
-//    usleep(100000);
-//
-//    $i++;
-//}
-
-    private function translateFile() {
-        $i = 0;
-        $hashs = $this->generateDots();
-        $output = [];
-
-        foreach($this->getLines('./files/category.php') as $line) {
+//'./files/category.php'
+    private function translateFile($pathToFile) {
+        foreach($this->getLines($pathToFile) as $line) {
             preg_match($this->pattern, $line, $matches);
 
             $resultLine = $line;
@@ -99,19 +106,10 @@ class TranslateFolder {
             }
 
             file_put_contents($this->outputFile, $resultLine, FILE_APPEND | LOCK_EX);
-
-            for ($k=0; $k <= $i; $k++) {
-                $hashs[$k] = '#';
-            }
-
-            $output[] = 'Working ' . $i . '% ' . $hashs;
-//            $output[] = 'Time: ' . round(microtime(true) - $start, 2) . 's';
-            $this->replaceCommandOutput($output);
-            $i++;
         }
     }
 
-    public function replaceCommandOutput(array $output) {
+    private function replaceCommandOutput(array $output) {
         static $oldLines = 0;
         $numNewLines = count($output) - 1;
 
