@@ -2,11 +2,9 @@
 
 /*
  * TODO:
- * Добавить создание папки с именем второва параметра
- * Добавить визуальный эфект в терменал
  * Подчитать колличевство файлов
  * При каждом переведенном отображать % сделанного и #...
- * Рекурсивно обходить всю папку и переводить
+ * Рекурсивно обходить всю папку и переводить *
  */
 
 require_once ('vendor/autoload.php');
@@ -35,38 +33,42 @@ class TranslateFolder {
     }
 
     public function run($dirName, $newDir) {
-    	// create & scan directory
+        mkdir($newDir, 0777, true);
 
-		$di = new RecursiveDirectoryIterator(__DIR__ . '/files',RecursiveDirectoryIterator::SKIP_DOTS);
+		$di = new RecursiveDirectoryIterator($dirName,RecursiveDirectoryIterator::SKIP_DOTS);
 		$it = new RecursiveIteratorIterator($di);
 
-		foreach($it as $file) {
-			if (pathinfo($file, PATHINFO_EXTENSION) === "php") {
-				echo $file, PHP_EOL;
-			}
-		}
+//        foreach($it as $fileinfo){
+//		    var_dump($it->getSubPathName());
+//		    var_dump($it->getSubPath());
+//        }
+//
+//		die();
 
 //        echo $dirName . ' ' . $newDir .  PHP_EOL;
         $start = microtime(true);
 
 		$i = 0;
 		$hashes = $this->generateDots();
-		while ($i <= 5) {
 
-			// Передать имя путь и имя файла
-//        $this->translateFile();
+		foreach($it as $file) {
+			if (pathinfo($file, PATHINFO_EXTENSION) === "php") {
+//				echo $file, PHP_EOL;
 
+                // Передать имя путь и имя файла
+                 $this->translateFile($file);
 
-			$output = [];
-			$output[] = 'Working: ' . $i  . '% ' . $hashes;
-			$output[] = 'Please wait while our monkeys finish translating';
+                $output = [];
+                $output[] = 'Working: ' . $i  . '% ' . $hashes;
+                $output[] = 'Please wait while our monkeys finish translating';
 
-			$this->replaceCommandOutput($output);
-//			sleep(1);
-			usleep(100000);
-			$hashes[$i] = '#';
-			$i++;
-		}
+                $this->replaceCommandOutput($output);
+                // sleep(1);
+                usleep(100000);
+                $hashes[$i] = '#';
+                $i++;
+            }
+        }
         echo PHP_EOL . PHP_EOL . 'Full Time: ' . round(microtime(true) - $start, 2).' s.' . PHP_EOL;
     }
 
@@ -92,7 +94,6 @@ class TranslateFolder {
         return $hashs;
     }
 
-//'./files/category.php'
     private function translateFile($pathToFile) {
         foreach($this->getLines($pathToFile) as $line) {
             preg_match($this->pattern, $line, $matches);
@@ -105,7 +106,12 @@ class TranslateFolder {
                 $resultLine = preg_replace($this->pattern, $translate, $line);
             }
 
-            file_put_contents($this->outputFile, $resultLine, FILE_APPEND | LOCK_EX);
+
+            if (!is_dir(__DIR__ . '/files/ua-ua/7777')) {
+                mkdir(__DIR__ . '/files/ua-ua/7777', 0777);
+            }
+
+                file_put_contents(__DIR__ . '/files/ua-ua/7777/test.txt', $resultLine, FILE_APPEND | LOCK_EX);
         }
     }
 
