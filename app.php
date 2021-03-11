@@ -1,5 +1,5 @@
 <?php
-error_reporting(0);
+//error_reporting(0);
 /*
  * TODO:
  * Подчитать колличевство файлов
@@ -9,16 +9,16 @@ error_reporting(0);
 
 require_once ('vendor/autoload.php');
 
-use \Dejurin\GoogleTranslateForFree;
+use Dejurin\GoogleTranslateForFree;
 
 class TranslateFolder {
     private $source     = 'ru';
     private $target     = 'uk';
     private $attempts   = 5;
-    private $pattern    = "/\s'(.+?)'/";
+    private $pattern    = "/(?<=[\s|=]').*(?<!')(?<!;)/";
 //    private $outputFile = './files/category_out.php';
 
-	private GoogleTranslateForFree $tr;
+	private $tr;
 
 	public function __construct($params)
     {
@@ -100,8 +100,8 @@ class TranslateFolder {
             $resultLine = $line;
 
             if($matches) {
-                $translate = $this->tr->translate($this->source, $this->target, $matches[1], $this->attempts);
-                $translate = " '" . addslashes($translate) . "'";
+                $translate = $this->tr->translate($this->source, $this->target, $matches[0], $this->attempts);
+                $translate = addslashes($translate);
 
                 $resultLine = preg_replace($this->pattern, $translate, $line);
             }
@@ -111,6 +111,8 @@ class TranslateFolder {
             }
 
             file_put_contents(__DIR__ . '/files/ua-ua/' . $pathToFile . '/'. $nameFile, $resultLine, FILE_APPEND | LOCK_EX);
+
+            sleep(rand(1, 7));
         }
     }
 
