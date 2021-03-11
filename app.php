@@ -4,7 +4,7 @@ error_reporting(0);
  * TODO:
  * Подчитать колличевство файлов
  * При каждом переведенном отображать % сделанного и #...
- * Рекурсивно обходить всю папку и переводить *
+ * Решить вопрос с путиями
  */
 
 require_once ('vendor/autoload.php');
@@ -16,9 +16,9 @@ class TranslateFolder {
     private $target     = 'uk';
     private $attempts   = 5;
     private $pattern    = "/\s'(.+?)'/";
-    private $outputFile = './files/category_out.php';
+//    private $outputFile = './files/category_out.php';
 
-	private $tr;
+	private GoogleTranslateForFree $tr;
 
 	public function __construct($params)
     {
@@ -91,6 +91,8 @@ class TranslateFolder {
     private function translateFile($pathToFile, $nameFile, $fullName) {
 
 		// TODO: решить проблему с путем '/files/ru-ru/'
+        // $dirName
+        // раз сплойдить брать последнюю часть, и рядом соавать апку ua-ua
         foreach($this->getLines(__DIR__ . '/files/ru-ru/' . $fullName) as $line) {
 
             preg_match($this->pattern, $line, $matches);
@@ -98,8 +100,9 @@ class TranslateFolder {
             $resultLine = $line;
 
             if($matches) {
-                $translate = ' ';
-                $translate .= $this->tr::translate($this->source, $this->target, $matches[0], $this->attempts);
+                $translate = $this->tr->translate($this->source, $this->target, $matches[1], $this->attempts);
+                $translate = " '" . addslashes($translate) . "'";
+
                 $resultLine = preg_replace($this->pattern, $translate, $line);
             }
 
