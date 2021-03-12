@@ -4,7 +4,6 @@
  * TODO:
  * Подчитать колличевство файлов
  * При каждом переведенном отображать % сделанного и #...
- * Решить вопрос с путиями
  */
 
 require_once ('vendor/autoload.php');
@@ -16,8 +15,9 @@ class TranslateFolder {
     private $target     = 'uk';
     private $attempts   = 5;
     private $pattern    = "/(?<=[\s|=]').*(?<!')(?<!;)/";
-//    private $outputFile = './files/category_out.php';
-
+    private $pathToOldDir;
+    private $pathToNewDir;
+    private $languageFiles;
 	private $tr;
 
 	public function __construct($params)
@@ -33,8 +33,10 @@ class TranslateFolder {
     }
 
     public function run($dirName, $newDir) {
-		if (!is_dir(__DIR__ . '/files/' . $newDir)) {
-			mkdir(__DIR__ . '/files/' . $newDir, 0777, true);
+		$this->setPathProperties($dirName, $newDir);
+
+		if (!is_dir($this->pathToNewDir)) {
+			mkdir($this->pathToNewDir, 0777, true);
 		}
 
 		$di = new RecursiveDirectoryIterator($dirName,RecursiveDirectoryIterator::SKIP_DOTS);
@@ -66,6 +68,14 @@ class TranslateFolder {
         echo PHP_EOL . PHP_EOL . 'Full Time: ' . round(microtime(true) - $start, 2).' s.' . PHP_EOL;
     }
 
+    private function setPathProperties($dirName, $newDir) {
+		$pathToLanguageFiles = explode('/', $dirName);
+		$oldDir = array_pop($pathToLanguageFiles);
+		$this->languageFiles = implode('/', $pathToLanguageFiles);
+		$this->pathToNewDir = $this->languageFiles . '/' . $newDir;
+		$this->pathToOldDir = $this->languageFiles . '/' . $oldDir . '/';
+	}
+
     private function getLines(string $path) {
         $file = fopen($path, 'r');
 
@@ -81,22 +91,17 @@ class TranslateFolder {
     }
 
     private function generateDots() {
-        $hashs = '';
+        $hashes = '';
         for ($j=0; $j<=100; $j++) {
-            $hashs .= '.';
+            $hashes .= '.';
         }
-        return $hashs;
+        return $hashes;
     }
 
     private function translateFile($pathToFile, $nameFile, $fullName) {
-
-		// TODO: решить проблему с путем '/files/ru-ru/'
-        // $dirName
-        // раз сплойдить брать последнюю часть, и рядом соавать апку ua-ua
-        foreach($this->getLines(__DIR__ . '/files/ru-ru/' . $fullName) as $line) {
+        foreach($this->getLines($this->pathToOldDir . $fullName) as $line) {
 
             preg_match($this->pattern, $line, $matches);
-
             $resultLine = $line;
 
             if($matches) {
@@ -106,11 +111,11 @@ class TranslateFolder {
                 $resultLine = preg_replace($this->pattern, $translate, $line);
             }
 
-            if (!is_dir(__DIR__ . '/files/ua-ua/' . $pathToFile)) {
-                mkdir(__DIR__ . '/files/ua-ua/' . $pathToFile, 0777, true);
+            if (!is_dir($this->pathToNewDir . $pathToFile)) {
+                mkdir($this->pathToNewDir . $pathToFile, 0777, true);
             }
 
-            file_put_contents(__DIR__ . '/files/ua-ua/' . $pathToFile . '/'. $nameFile, $resultLine, FILE_APPEND | LOCK_EX);
+            file_put_contents($this->pathToNewDir . $pathToFile . '/'. $nameFile, $resultLine, FILE_APPEND | LOCK_EX);
 
             sleep(rand(1, 7));
         }
