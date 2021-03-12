@@ -1,9 +1,11 @@
 <?php
+
 //error_reporting(0);
 /*
  * TODO:
  * Подчитать колличевство файлов
  * При каждом переведенном отображать % сделанного и #...
+ * Добавить проверку на слеши
  */
 
 require_once ('vendor/autoload.php');
@@ -117,7 +119,7 @@ class TranslateFolder {
 
             file_put_contents($this->pathToNewDir . $pathToFile . '/'. $nameFile, $resultLine, FILE_APPEND | LOCK_EX);
 
-            sleep(rand(1, 7));
+            sleep(rand(1, 2));
         }
     }
 
