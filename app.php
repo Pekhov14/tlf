@@ -1,13 +1,6 @@
 <?php
 
-//error_reporting(0);
-
-/*
- * TODO:
- * Подчитать колличевство файлов
- * При каждом переведенном отображать % сделанного и #...
- * Добавить проверку на слеши
- */
+error_reporting(0);
 
 require_once ('vendor/autoload.php');
 
@@ -22,20 +15,30 @@ class TranslateFolder {
     private $pathToNewDir;
     private $languageFiles;
 	private $tr;
+    private $fastTranslate;
+    private static $numberFiles;
+
+    public const fixedInterest = 100;
 
 	public function __construct($params)
     {
-        if(!isset($params[1]) || !isset($params[2])) {
+        if(!isset($params[1], $params[2])) {
             trigger_error('My creator wants you to pass two arguments');
             die();
         }
-
         $this->tr = new GoogleTranslateForFree();
 
-        $this->run($params[1], $params[2]);
+        $this->fastTranslate = (!isset($params[3])) ? false : true;
+
+        $params[2] .= (substr($params[2], -1) == '/' ? '' : '/');
+        $params[1] = rtrim($params[1], '/');
+
+
+        $this->run($params[1], $params[2], $this->fastTranslate);
     }
 
-    public function run($dirName, $newDir) {
+    public function run($dirName, $newDir)
+    {
 		$this->setPathProperties($dirName, $newDir);
 
 		if (!is_dir($this->pathToNewDir)) {
@@ -45,33 +48,55 @@ class TranslateFolder {
 		$di = new RecursiveDirectoryIterator($dirName,RecursiveDirectoryIterator::SKIP_DOTS);
 		$it = new RecursiveIteratorIterator($di);
 
+		self::setNumberFiles($it);
+
         $start = microtime(true);
 
-		$i = 0;
-		$hashes = $this->generateDots();
+		$numberTranslatedFiles = 0;
 
 		foreach($it as $file) {
 			$fileInfo = pathinfo($file);
 
 			if ($fileInfo['extension'] === "php") {
+
+                $percentTranslatedFiles = self::getPercentTranslatedFiles($numberTranslatedFiles);
+
 				$output = [];
-				$output[] = 'Working: ' . $i  . '% ' . $hashes;
+				$output[] = 'Working: '
+                    . $percentTranslatedFiles  . '% '
+                    . $this->getHashes($percentTranslatedFiles);
 				$output[] = 'Please wait while our monkeys finish translating';
 
 				$this->replaceCommandOutput($output);
 
 				usleep(100000);
-				$hashes[$i] = '#';
 
                 $this->translateFile($it->getSubPath(), $fileInfo['basename'], $it->getSubPathName());
 
-                $i++;
+                $numberTranslatedFiles++;
             }
         }
         echo PHP_EOL . PHP_EOL . 'Full Time: ' . round(microtime(true) - $start, 2).' s.' . PHP_EOL;
     }
 
-    private function setPathProperties($dirName, $newDir) {
+    private static function setNumberFiles($it)
+    {
+        $countFiles = 0;
+
+        foreach ($it as $item) {
+            $countFiles++;
+        }
+
+        self::$numberFiles = $countFiles;
+    }
+
+    private static function getPercentTranslatedFiles($numberTranslatedFiles)
+    {
+        return ceil(($numberTranslatedFiles / self::$numberFiles) * self::fixedInterest);
+    }
+
+    private function setPathProperties($dirName, $newDir)
+    {
 		$pathToLanguageFiles = explode('/', $dirName);
 		$oldDir = array_pop($pathToLanguageFiles);
 		$this->languageFiles = implode('/', $pathToLanguageFiles);
@@ -79,7 +104,8 @@ class TranslateFolder {
 		$this->pathToOldDir = $this->languageFiles . '/' . $oldDir . '/';
 	}
 
-    private function getLines(string $path) {
+    private function getLines(string $path)
+    {
         $file = fopen($path, 'r');
 
         if(!$file) {
@@ -93,15 +119,34 @@ class TranslateFolder {
         fclose($file);
     }
 
-    private function generateDots() {
-        $hashes = '';
-        for ($j=0; $j<=100; $j++) {
-            $hashes .= '.';
+    private function getHashes($numberDots) {
+	    $dots = '';
+
+        if ((int)$numberDots === 0) {
+            for ($i = 1; $i <= self::fixedInterest; $i++) {
+                $dots .= '.';
+            }
+        } elseif ($numberDots > 0) {
+            for ($i = 0; $i <= $numberDots; $i++) {
+                $dots .= '#';
+            }
         }
-        return $hashes;
+
+	    $hashes = strlen($dots);
+
+        if ($hashes !== self::fixedInterest) {
+            $otherPoints = self::fixedInterest - $hashes;
+
+            for ($i = 0; $i <= $otherPoints; $i++) {
+                $dots .= '.';
+            }
+        }
+
+        return $dots;
     }
 
-    private function translateFile($pathToFile, $nameFile, $fullName) {
+    private function translateFile($pathToFile, $nameFile, $fullName)
+    {
         foreach($this->getLines($this->pathToOldDir . $fullName) as $line) {
 
             preg_match($this->pattern, $line, $matches);
@@ -120,11 +165,14 @@ class TranslateFolder {
 
             file_put_contents($this->pathToNewDir . $pathToFile . '/'. $nameFile, $resultLine, FILE_APPEND | LOCK_EX);
 
-            sleep(rand(1, 2));
+            // Pretending what we think
+            $pause = ($this->fastTranslate) ? rand(1, 3) : rand(20, 60);
+            sleep($pause);
         }
     }
 
-    private function replaceCommandOutput(array $output) {
+    private function replaceCommandOutput(array $output)
+    {
         static $oldLines = 0;
         $numNewLines = count($output) - 1;
 
@@ -138,7 +186,7 @@ class TranslateFolder {
 
         $numNewLines = $oldLines;
     }
-};
+}
 
 
 (new TranslateFolder($argv));
