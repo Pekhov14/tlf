@@ -3,6 +3,8 @@
 ##### tlf - translate language files
 
 ---
+![lang php](https://img.shields.io/badge/-PHP-blue)
+
 
 ### Запуск скрипта
 
