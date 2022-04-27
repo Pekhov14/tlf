@@ -10,7 +10,7 @@ class TranslateFolder {
     private $source     = 'ru';
     private $target     = 'uk';
     private $attempts   = 5;
-    private $pattern    = "/(?<=[\s|=]').*(?<!')(?<!;)/";
+    private $pattern    = "/(?<=[\s|=](\"|')).*(?<!(\"|'))(?<!;)/";
     private $pathToOldDir;
     private $pathToNewDir;
     private $languageFiles;
@@ -165,9 +165,11 @@ class TranslateFolder {
 
             file_put_contents($this->pathToNewDir . $pathToFile . '/'. $nameFile, $resultLine, FILE_APPEND | LOCK_EX);
 
-            // Pretending what we think
-            $pause = ($this->fastTranslate) ? rand(1, 3) : rand(20, 60);
-            sleep($pause);
+            if($matches) {
+                // Pretending what we think
+                $pause = ($this->fastTranslate) ? rand(1, 3) : rand(20, 60);
+                sleep($pause);
+            }
         }
     }
 
@@ -190,3 +192,4 @@ class TranslateFolder {
 
 
 (new TranslateFolder($argv));
+
