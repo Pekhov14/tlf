@@ -84,15 +84,9 @@ class TranslateFolder {
         echo PHP_EOL . PHP_EOL . 'Full Time: ' . round(microtime(true) - $start, 2).' s.' . PHP_EOL;
     }
 
-    private static function setNumberFiles($it)
+    private static function setNumberFiles($it): void
     {
-        $countFiles = 0;
-
-        foreach ($it as $item) {
-            $countFiles++;
-        }
-
-        self::$numberFiles = $countFiles;
+        self::$numberFiles = count($it);
     }
 
     private static function getPercentTranslatedFiles($numberTranslatedFiles)
@@ -114,7 +108,7 @@ class TranslateFolder {
         $file = fopen($path, 'r');
 
         if(!$file) {
-            throw new \Exception();
+            throw new \RuntimeException();
         }
 
         while ($line = fgets($file)) {
