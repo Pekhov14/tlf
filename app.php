@@ -91,7 +91,7 @@ class TranslateFolder {
 
     private static function getPercentTranslatedFiles($numberTranslatedFiles)
     {
-        return ceil(($numberTranslatedFiles / self::$numberFiles) * self::fixedInterest);
+        return floor(($numberTranslatedFiles / self::$numberFiles) * self::fixedInterest);
     }
 
     private function setPathProperties($dirName, $newDir)
