@@ -7,8 +7,8 @@ require_once ('vendor/autoload.php');
 use Dejurin\GoogleTranslateForFree;
 
 class TranslateFolder {
-    private $source     = 'ru';
-    private $target     = 'uk';
+    private $source;
+    private $target;
     private $attempts   = 5;
     private $pattern    = "/(?<=[\s|=](\"|')).*(?<!(\"|'))(?<!;)/";
     private $pathToOldDir;
@@ -22,30 +22,35 @@ class TranslateFolder {
 
 	public function __construct($params)
     {
-        if(!isset($params[1], $params[2])) {
+        [$application, $dirName, $newDir, $isFastTranslate, $source, $target] = $params;
+
+        if(!isset($dirName, $newDir)) {
             trigger_error('My creator wants you to pass two arguments');
             die();
         }
         $this->tr = new GoogleTranslateForFree();
 
-        $this->fastTranslate = (!isset($params[3])) ? false : true;
+        $dirName = rtrim($dirName, '/');
+        $newDir .= (substr($newDir, -1) == '/' ? '' : '/');
 
-        $params[2] .= (substr($params[2], -1) == '/' ? '' : '/');
-        $params[1] = rtrim($params[1], '/');
+        $this->pathToNewDir = $newDir;
+        $this->pathToOldDir = $dirName;
+        $this->fastTranslate = (isset($isFastTranslate) && $isFastTranslate == true) ? true : false;
+        $this->source = $source ?? 'ru';
+        $this->target = $target ?? 'uk';
 
-
-        $this->run($params[1], $params[2], $this->fastTranslate);
+        $this->run();
     }
 
-    public function run($dirName, $newDir)
+    public function run()
     {
-		$this->setPathProperties($dirName, $newDir);
+		$this->setPathProperties($this->pathToOldDir, $this->pathToNewDir);
 
 		if (!is_dir($this->pathToNewDir)) {
 			mkdir($this->pathToNewDir, 0777, true);
 		}
 
-		$di = new RecursiveDirectoryIterator($dirName,RecursiveDirectoryIterator::SKIP_DOTS);
+		$di = new RecursiveDirectoryIterator($this->pathToOldDir,RecursiveDirectoryIterator::SKIP_DOTS);
 		$it = new RecursiveIteratorIterator($di);
 
 		self::setNumberFiles($it);
@@ -148,7 +153,6 @@ class TranslateFolder {
     private function translateFile($pathToFile, $nameFile, $fullName)
     {
         foreach($this->getLines($this->pathToOldDir . $fullName) as $line) {
-
             preg_match($this->pattern, $line, $matches);
             $resultLine = $line;
 
@@ -167,7 +171,7 @@ class TranslateFolder {
 
             if($matches) {
                 // Pretending what we think
-                $pause = ($this->fastTranslate) ? rand(1, 3) : rand(20, 60);
+                $pause = ($this->fastTranslate) ? random_int(1, 3) : random_int(20, 60);
                 sleep($pause);
             }
         }

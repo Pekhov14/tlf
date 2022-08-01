@@ -1,5 +1,5 @@
 {
-    "name": "pekhov/test_translate",
+    "name": "pekhov/translate-language-files",
     "require": {
         "dejurin/php-google-translate-for-free": "^1.0"
     },
